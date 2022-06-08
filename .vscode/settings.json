@@ -1,3 +1,10 @@
 {
-    "cmake.sourceDirectory": "${workspaceFolder}/server"
+    "cmake.sourceDirectory": "${workspaceFolder}/server",
+    "files.associations": {
+        "semaphore": "cpp",
+        "new": "cpp",
+        "string": "cpp",
+        "iosfwd": "cpp",
+        "iostream": "cpp"
+    }
 }

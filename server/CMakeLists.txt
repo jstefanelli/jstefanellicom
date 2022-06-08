@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.18)
 
 project(jwx VERSION 0.1.0 DESCRIPTION "John stefanelli Webserver eXperiment")
 
-add_executable(jwx "src/main.cpp")
-set_target_properties(PROPERTIES CMAKE_CXX_STANDARD 20)
-set_target_properties(PROPERTIES CMAKE_CXX_STANDARD_REQUIRED TRUE)
+add_executable(jwx "src/main.cpp" "src/socket_client.cpp" "src/http_client.cpp")
+target_include_directories(jwx PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
+set_target_properties(jwx PROPERTIES CMAKE_CXX_STANDARD 20)
+set_target_properties(jwx PROPERTIES CMAKE_CXX_STANDARD_REQUIRED TRUE)
