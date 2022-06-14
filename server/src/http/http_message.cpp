@@ -1,9 +1,10 @@
 #include "http/http_message.h"
 #include <sstream>
 #include "utils.h"
+#include <iostream>
 
 namespace jwx::http {
-	void HTTPMessage::Load(const std::vector<char> data) {
+	void HTTPMessage::Load(const std::vector<uint8_t> data) {
 		std::string currentLine;
 		auto it = data.begin();
 
@@ -46,7 +47,8 @@ namespace jwx::http {
 		}
 
 		std::string name = line.substr(0, idx);
-		std::string value = line.substr(idx);
+		
+		std::string value = idx == line.length() - 1 ? "" : line.substr(idx + 1);
 
 		Utils::trim(name);
 		Utils::trim(value);
@@ -173,7 +175,7 @@ namespace jwx::http {
 		content = std::move(data);
 
 		if (setContentLength) {
-			ContentLength(data.size());
+			ContentLength(content.size());
 		}
 	} 
 }

@@ -14,7 +14,7 @@ namespace jwx {
 	class SocketClientUser {
 	public:
 		virtual void OnConnectionStarted(const SocketClient& client) = 0;
-		virtual void OnDataReceived(const SocketClient& client, const std::vector<char>& data) = 0;
+		virtual void OnDataReceived(const SocketClient& client, const std::vector<uint8_t>& data) = 0;
 		virtual void OnSocketClosed(const SocketClient& client) = 0;
 	};
 
@@ -35,7 +35,7 @@ namespace jwx {
 
 		static void StartClient(std::shared_ptr<SocketClient> client);
 		void appendUser(std::shared_ptr<SocketClientUser> user);
-		bool write(const std::vector<char> &data) const;
+		bool write(const std::vector<uint8_t> &data) const;
 		void stopThread();
 		void joinThread() const;
 	};

@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <sstream>
 #include "http/http_request.h"
+#include "http/http_response.h"
 
 namespace jwx {
 	void HttpClient::OnConnectionStarted(const SocketClient& client) {
@@ -15,7 +16,7 @@ namespace jwx {
 
 	}
 
-	void HttpClient::OnDataReceived(const SocketClient& client, const std::vector<char>& data) {
+	void HttpClient::OnDataReceived(const SocketClient& client, const std::vector<uint8_t>& data) {
 		http::HTTPRequest req;
 		req.Load(data);
 
@@ -23,18 +24,23 @@ namespace jwx {
 
 		std::string response_content = "Echo!";
 
-		std::stringstream response_stream;
-		response_stream << "HTTP/1.1 500 Internal Server Error\n";
-		response_stream << "Connection: keep-alive\n";
-		response_stream << "Keep-Alive: max=5, timeout=" << SOCKETCLIENT_READ_TIMEOUT / 1000 << "\n";
-		response_stream << "Content-Type: text/plain\n";
-		response_stream << "Content-Length: " << response_content.size() << "\n";
-		response_stream << "\n";
-		response_stream << response_content << "\n";
+		http::HTTPResponse response;
+		response.StatusCode(500);
+		response.StatusText("Inernal Server Error");
+		response.Version(req.Version());
+		response.Content(std::vector<uint8_t>(response_content.begin(), response_content.end()));
+		response.ContentType("text/plain");
 
-		std::string response_str = response_stream.str();
+		if (req.GetHeader("Connection") == "keep-alive") {
+			response.SetHeader("Connection", "keep-alive");
+			response.SetHeader("Keep-Alive", "max=5, timeout=5"); //TODO: Use SOCKETCLIENT_READ_TIMEOUT
+		} else if (req.GetHeader("connection") == "keep-alive") {
+			response.SetHeader("connection", "keep-alive");
+			response.SetHeader("keep-alive", "max=5, timeout=5"); //TODO: Use SOCKETCLIENT_READ_TIMEOUT
+		}
 
-		std::vector<char> response(response_str.begin(), response_str.end());
+		std::cout << "[" << response.Version() << "][" << response.StatusCode() << "] " << response.StatusText() << std::endl;
+
 		client.write(response);
 	}
 }

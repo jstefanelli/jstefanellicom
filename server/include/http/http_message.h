@@ -83,7 +83,7 @@ namespace jwx::http {
 		virtual void ParseFirstLine(std::string firstLine) = 0;
 		virtual bool ParseHeader(const std::string& line);
 	public:
-		void Load(std::vector<char> data);
+		void Load(std::vector<uint8_t> data);
 
 		bool HasHeader(std::string header) const;
 		std::optional<std::string> GetHeader(std::string header) const;

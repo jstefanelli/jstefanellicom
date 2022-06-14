@@ -39,23 +39,19 @@ namespace jwx {
 		}
 
 		char* buffer = new char[SOCKETCLIENT_READ_BUFFER_SIZE];
-		std::vector<char> currentMessage;
+		std::vector<uint8_t> currentMessage;
 		while(alive) {
-			std::cout << "[SocketClient] Receiving.." << std::endl;
 			ssize_t read = recv(socket, buffer, SOCKETCLIENT_READ_BUFFER_SIZE, 0);
 			if (read > 0) {
-				std::cout << "[SocketClient] Received " << read << " bytes" << std::endl;
 				currentMessage.insert(currentMessage.end(), buffer, buffer + read);
 			} else if (read == 0) {
 				//Connection closed
-				std::cout << "[SocketClient] Connection closed. " << std::endl;
 				alive = false;
 				break;
 			} else if (read < 0) {
 				auto err = errno;
 				if (err == EWOULDBLOCK) {
 					if (currentMessage.size() > 0) {
-						std::cout << "[SocketClient] Received " << currentMessage.size() << " bytes" << std::endl;
 						//Read operation should be over, send the message to users
 						for(auto i = users.begin(); i != users.end(); i++) {
 							(*i)->OnDataReceived(*this, currentMessage);
@@ -63,7 +59,6 @@ namespace jwx {
 						currentMessage.clear();
 					}
 
-					std::cout << "[SocketClient] Waiting.." << std::endl;
 					pollfd poll_fd{};
 					poll_fd.fd = socket;
 					poll_fd.events = POLLIN;
@@ -86,8 +81,6 @@ namespace jwx {
 			}
 		}
 		delete[] buffer;
-
-		std::cout << "[SocketClient] Socket closing." << std::endl;
 		close(socket);
 
 		for(auto i = users.begin(); i != users.end(); i++) {
@@ -104,7 +97,7 @@ namespace jwx {
 		this->users.push_back(std::move(user));
 	}
 
-	bool SocketClient::write(const std::vector<char>& data) const {
+	bool SocketClient::write(const std::vector<uint8_t>& data) const {
 		pthread_t current_thread = pthread_self();
 		if (!pthread_equal(current_thread, thread)) {
 			std::cerr << "[SocketClient] Called write() from invalid thread" << std::endl;
@@ -143,8 +136,6 @@ namespace jwx {
 				}
 			}
 		} while(true);
-
-		std::cout << "[SocketClient] Written " << total_written << " bytes" << std::endl;
 		return true;
 	}
 
