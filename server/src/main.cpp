@@ -30,7 +30,7 @@ int main(int argc, char** argv) {
 
 	sockaddr_in bind_address{};
 	bind_address.sin_family = AF_INET;
-	bind_address.sin_port = htons(4981);
+	bind_address.sin_port = htons(4955);
 	bind_address.sin_addr.s_addr = INADDR_ANY;
 
 	if (bind(listen_socket, reinterpret_cast<sockaddr*>(&bind_address), sizeof(bind_address)) < 0) {
