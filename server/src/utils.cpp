@@ -24,4 +24,18 @@ namespace Utils {
 	std::string& trim(std::string &s) {
 		return ltrim(rtrim(s));
 	}
+
+	std::string& tolower(std::string &s) {
+		std::transform(s.begin(), s.end(), s.begin(), [](auto c) {
+			return std::tolower(c);
+		});
+		return s;
+	}
+
+	std::string& toupper(std::string &s) {
+		std::transform(s.begin(), s.end(), s.begin(), [](auto c) {
+			return std::toupper(c);
+		});
+		return s;
+	}
 }

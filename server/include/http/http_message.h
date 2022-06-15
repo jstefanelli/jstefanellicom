@@ -70,6 +70,9 @@ namespace jwx::http {
 		constexpr bool operator==(const HTTPMethod& o) { return o.val == val; }
 		constexpr bool operator!=(const HTTPMethod& o) { return o.val != val; }
 
+		constexpr bool operator==(const HTTPMethod::Value o) { return val == o; }
+		constexpr bool operator!=(const HTTPMethod::Value o) { return val != o; }
+
 	private:
 		Value val;
 	};

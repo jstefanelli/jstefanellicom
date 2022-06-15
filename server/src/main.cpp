@@ -9,12 +9,14 @@
 #include <vector>
 #include "socket_client.h"
 #include "http_client.h"
+#include "cache/cache_mgr.h"
 
 #define JWX_RECVSIZE 1024 * 5
 #define JWX_KEEPALIVE_SECODNS 5
 
 bool alive = true;
 std::vector<std::weak_ptr<jwx::SocketClient>> clients;
+std::shared_ptr<jwx::cache::CacheMgr> cache;
 
 
 int main(int argc, char** argv) {
@@ -46,6 +48,8 @@ int main(int argc, char** argv) {
 	signal(SIGINT, [](int sig) -> void {
 		alive = false;
 	});
+
+	cache = std::make_shared<jwx::cache::CacheMgr>("/Users/jps/Source/website2/ui/build/");
 	
 	while (alive) {
 		sockaddr_in client_address{};
@@ -66,7 +70,7 @@ int main(int argc, char** argv) {
 			}
 		} else {
 			auto client = std::make_shared<jwx::SocketClient>(client_socket);
-			client->appendUser(std::make_shared<jwx::HttpClient>());
+			client->appendUser(std::make_shared<jwx::HttpClient>(cache));
 
 			clients.push_back(std::weak_ptr<jwx::SocketClient>(client));
 

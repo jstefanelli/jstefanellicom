@@ -3,6 +3,7 @@
 #include <vector>
 #include <optional>
 #include <fstream>
+#include <memory>
 
 namespace jwx::cache {
 	class Cache {
@@ -14,7 +15,7 @@ namespace jwx::cache {
 		explicit Cache(std::filesystem::path path);
 	public:
 		Cache() = delete;
-		static std::optional<Cache> Generate(std::filesystem::path path);
+		static std::shared_ptr<Cache> Generate(std::filesystem::path path);
 
 		const std::vector<uint8_t>& Data() const;
 		std::filesystem::file_time_type Time() const;

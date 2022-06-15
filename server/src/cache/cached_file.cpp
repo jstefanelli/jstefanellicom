@@ -1,4 +1,6 @@
 #include "cache/cached_file.h"
+#include <fstream>
+#include <iterator>
 
 namespace jwx::cache {
 	Cache::Cache(std::filesystem::path path) {
@@ -41,11 +43,11 @@ namespace jwx::cache {
 		return new_time != file_time;
 	}
 
-	std::optional<Cache> Cache::Generate(std::filesystem::path path) {
+	std::shared_ptr<Cache> Cache::Generate(std::filesystem::path path) {
 		if(!std::filesystem::exists(path) || !std::filesystem::is_regular_file(path)) {
-			return std::nullopt;
+			return nullptr;
 		}
 
-		return Cache(path);
+		return std::shared_ptr<Cache>(new Cache(path));
 	}
 }
