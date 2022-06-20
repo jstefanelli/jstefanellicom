@@ -14,12 +14,97 @@
 #define JWX_RECVSIZE 1024 * 5
 #define JWX_KEEPALIVE_SECODNS 5
 
+const std::string target_content_path_arg("--content-path");
+const std::string help_arg("--help");
+const std::string port_arg("--port");
 bool alive = true;
 std::vector<std::weak_ptr<jwx::SocketClient>> clients;
 std::shared_ptr<jwx::cache::CacheMgr> cache;
 
-
 int main(int argc, char** argv) {
+	std::string target_content_path = "./content";
+	int target_port = 4955;
+
+	bool found_target_arg = false;
+	bool applied_target_arg = false;
+
+	bool found_port_arg = false;
+	bool applied_port_arg = false;
+	for(int i = 0; i < argc; i++) {
+		if (help_arg == argv[i]) {
+			std::cout << "Usage: " << argv[0] << " [" << target_content_path_arg << " /content/root/dir] [" << port_arg << " 4955]" << std::endl;
+			return 0;
+		}
+		
+		if (target_content_path_arg == argv[i]) {
+			if (applied_target_arg || found_target_arg) {
+				std::cerr << "Error: multiple '" << target_content_path_arg << "' instruction detected." << std::endl;
+				return 1;
+			}
+
+			if (found_port_arg) {
+				std::cerr << "Error: no value provided for argument '" << port_arg << "'" << std::endl;
+				return 1;
+			}
+
+			found_target_arg = true;
+			continue;
+		}
+
+		if (found_target_arg) {
+			target_content_path = argv[i];
+			found_target_arg = false;
+			applied_target_arg = true;
+			continue;
+		}
+
+		if (port_arg == argv[i]) {
+			if (applied_port_arg || found_port_arg) {
+				std::cerr << "Error: multiple '" << port_arg << "' instruction detected." << std::endl;
+				return 1;
+			}
+
+			if (found_target_arg) {
+				std::cerr << "Error: no value provided for argument '" << target_content_path_arg << "'" << std::endl;
+				return 1;
+			}
+
+			found_port_arg = true;
+			continue;
+		}
+
+		if (found_port_arg) {
+			int port = std::atoi(argv[i]);
+			if (port == 0) {
+				std::cerr << "Error: port '" << argv[i] << "' is an invalid value." << std::endl;
+				return 1;
+			}
+			target_port = port;
+			applied_port_arg = true;
+			found_port_arg = false;
+			continue;
+		}
+	}
+
+	if (found_target_arg && !applied_target_arg) {
+		std::cerr << "Error: no path provided for argument '" << target_content_path_arg << "'" << std::endl;
+		return 1;
+	}
+
+	if (!std::filesystem::exists(target_content_path)) {
+		std::cerr << "Error: content path '" << target_content_path << "' does not exist." << std::endl;
+		return 1;
+	}
+
+	auto content_path = std::filesystem::canonical(target_content_path);
+
+	if (!std::filesystem::is_directory(content_path)) {
+		std::cerr << "Error: content path '" << target_content_path << "' is not a directory." << std::endl;
+		return 1;
+	}
+
+	auto port = htons(target_port);
+
 	auto listen_socket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 	if (listen_socket < 0) {
 		std::cerr << "[Main] Failed to create socket." << std::endl;
@@ -32,7 +117,7 @@ int main(int argc, char** argv) {
 
 	sockaddr_in bind_address{};
 	bind_address.sin_family = AF_INET;
-	bind_address.sin_port = htons(4955);
+	bind_address.sin_port = port;
 	bind_address.sin_addr.s_addr = INADDR_ANY;
 
 	if (bind(listen_socket, reinterpret_cast<sockaddr*>(&bind_address), sizeof(bind_address)) < 0) {
@@ -49,7 +134,7 @@ int main(int argc, char** argv) {
 		alive = false;
 	});
 
-	cache = std::make_shared<jwx::cache::CacheMgr>("/Users/jps/Source/website2/ui/build/");
+	cache = std::make_shared<jwx::cache::CacheMgr>(content_path);
 	
 	while (alive) {
 		sockaddr_in client_address{};

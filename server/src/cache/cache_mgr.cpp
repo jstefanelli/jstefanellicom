@@ -13,7 +13,13 @@ namespace jwx::cache {
 
 	const std::shared_ptr<Cache> CacheMgr::Request(std::string request) {
 		lock.lock();
-		auto path = std::filesystem::canonical(std::filesystem::path(root_content_dir).concat(request));
+		auto noncanonical_path = std::filesystem::path(root_content_dir).concat(request);
+		if (!std::filesystem::exists(noncanonical_path)) {
+			lock.unlock();
+			std::cerr << "[CacheMgr] Path '" << noncanonical_path << "' does not exits." << std::endl;
+			return nullptr;
+		}
+		auto path = std::filesystem::canonical(noncanonical_path);
 		auto tmp = path;
 		bool found = false;
 
@@ -27,6 +33,7 @@ namespace jwx::cache {
 
 		if (!found) {
 			std::cerr << "[CacheMgr] Path '" << path << "' is outside of the root_content_dir '" << root_content_dir << "'" << std::endl;
+			lock.unlock();
 			return nullptr;
 		}
 		
