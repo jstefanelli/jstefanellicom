@@ -12,6 +12,8 @@
 #include "cache/cache_mgr.h"
 #include <semaphore>
 #include <thread>
+#include <sys/utsname.h>
+#include <sstream>
 
 #define JWX_RECVSIZE 1024 * 5
 #define JWX_KEEPALIVE_SECODNS 5
@@ -108,6 +110,12 @@ int main(int argc, char** argv) {
 		return 1;
 	}
 
+	utsname nm;
+	uname(&nm);
+
+	std::stringstream server_name;
+	server_name << "jwx/" << JWX_VERSION << " on " << nm.sysname << "@" << nm.release;
+ 
 	auto port = htons(target_port);
 
 	auto listen_socket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
@@ -168,7 +176,7 @@ int main(int argc, char** argv) {
 			}
 		} else {
 			auto client = std::make_shared<jwx::SocketClient>(client_socket);
-			client->appendUser(std::make_shared<jwx::HttpClient>(cache));
+			client->appendUser(std::make_shared<jwx::HttpClient>(cache, server_name.str()));
 
 			clients.push_back(std::weak_ptr<jwx::SocketClient>(client));
 

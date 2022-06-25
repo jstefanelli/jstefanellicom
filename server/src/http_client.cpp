@@ -9,7 +9,7 @@
 #include "http/http_response.h"
 
 namespace jwx {
-	HttpClient::HttpClient(std::shared_ptr<cache::CacheMgr> cache) : cache(cache) {
+	HttpClient::HttpClient(std::shared_ptr<cache::CacheMgr> cache, std::string server_name) : cache(cache), server_name(std::move(server_name)) {
 
 	}
 
@@ -38,11 +38,12 @@ namespace jwx {
 			response.SetHeader("connection", "keep-alive");
 			response.SetHeader("keep-alive", "max=5, timeout=5"); //TODO: Use SOCKETCLIENT_READ_TIMEOUT
 		}
+		response.Server(server_name);
 
 		bool requestOk = false;
 		bool streamResponse = false;
 		std::shared_ptr<cache::Cache> file;
-		if (req.Method() == http::HTTPMethod::GET) {
+		if ((req.Method() == http::HTTPMethod::GET) || req.Method() == http::HTTPMethod::HEAD) {
 			std::filesystem::path path(req.Url().Uri());
 
 			if (!path.has_filename()) {
@@ -56,7 +57,11 @@ namespace jwx {
 				response.StatusCode(200);
 				response.StatusText("Ok");
 				if (file->Data() != nullptr) {
-					response.Content(*(file->Data()));
+					if (req.Method() == http::HTTPMethod::GET) {
+						response.Content(*(file->Data()));
+					} else if (req.Method() == http::HTTPMethod::HEAD) {
+						response.ContentLength(file->Size());
+					}
 				} else {
 					streamResponse = true;
 				}
@@ -91,9 +96,9 @@ namespace jwx {
 		}
 
 		if (!requestOk) {
-			std::string response_content = "Echo!";
-			response.StatusCode(500);
-			response.StatusText("Inernal Server Error");
+			std::string response_content("JWX: File not found");
+			response.StatusCode(404);
+			response.StatusText("Not Found");
 			response.Content(std::vector<uint8_t>(response_content.begin(), response_content.end()));
 			response.ContentType("text/plain");
 		}
@@ -107,8 +112,12 @@ namespace jwx {
 
 			response.ContentLength(file_size);
 
+
+			std::cout << "[" << response.Version() << "][" << response.StatusCode() << "] " << response.StatusText() << " " << file_size << " (streaming...)"  << std::endl;
 			client.write(response);
-			client.writeStream(stream);
+			if (req.Method() == http::HTTPMethod::GET) {
+				client.writeStream(stream);
+			}
 		} else {
 			auto length = response.ContentLength();
 			std::cout << "[" << response.Version() << "][" << response.StatusCode() << "] " << response.StatusText() << " " << (length.has_value() ? length.value() : 0)  << std::endl;
