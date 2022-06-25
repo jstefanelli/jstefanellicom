@@ -10,6 +10,8 @@
 #include "socket_client.h"
 #include "http_client.h"
 #include "cache/cache_mgr.h"
+#include <semaphore>
+#include <thread>
 
 #define JWX_RECVSIZE 1024 * 5
 #define JWX_KEEPALIVE_SECODNS 5
@@ -34,7 +36,8 @@ int main(int argc, char** argv) {
 	bool applied_port_arg = false;
 	for(int i = 0; i < argc; i++) {
 		if (help_arg == argv[i]) {
-			std::cout << "Usage: " << argv[0] << " [" << target_content_path_arg << " /content/root/dir] [" << port_arg << " 4955]" << std::endl;
+			std::cout << "jwx (John's Webserver eXperiment) " << JWX_VERSION << std::endl;
+			std::cout << "Usage: " << argv[0] << " [" << target_content_path_arg << " ./content] [" << port_arg << " 4955]" << std::endl;
 			return 0;
 		}
 		
