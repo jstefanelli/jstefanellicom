@@ -6,5 +6,5 @@ add_executable(jwx "src/main.cpp" "src/socket_client.cpp" "src/http_client.cpp" 
 	"src/http/http_message.cpp" "src/http/http_request.cpp" "src/http/http_response.cpp"
 	"src/cache/cached_file.cpp" "src/cache/cache_mgr.cpp")
 target_include_directories(jwx PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
-set_target_properties(jwx PROPERTIES CMAKE_CXX_STANDARD 20)
-set_target_properties(jwx PROPERTIES CMAKE_CXX_STANDARD_REQUIRED TRUE)
+set_target_properties(jwx PROPERTIES CXX_STANDARD 20)
+set_target_properties(jwx PROPERTIES CXX_STANDARD_REQUIRED TRUE)

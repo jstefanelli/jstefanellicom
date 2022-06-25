@@ -12,16 +12,27 @@ namespace jwx::cache {
 		std::streampos fileSize = file.tellg();
 		file.seekg(0, std::ios::beg);
 
-		data.reserve(fileSize);
+		size = fileSize;
 
-		data.insert(data.end(),
-			std::istream_iterator<uint8_t>(file),
-			std::istream_iterator<uint8_t>());
+		if (fileSize <= JWX_CACHE_MAX_FILE_SIZE) {
+			data = std::make_shared<std::vector<uint8_t>>();
+
+			data->reserve(fileSize);
+
+			data->insert(data->end(),
+				std::istream_iterator<uint8_t>(file),
+				std::istream_iterator<uint8_t>());
+
+		}
 
 		file_time = std::filesystem::last_write_time(local_path);
 	}
 
-	const std::vector<uint8_t>& Cache::Data() const {
+	const size_t Cache::Size() const {
+		return size;
+	}
+
+	const std::shared_ptr<const std::vector<uint8_t>> Cache::Data() const {
 		return data;
 	}
 
@@ -49,5 +60,13 @@ namespace jwx::cache {
 		}
 
 		return std::shared_ptr<Cache>(new Cache(path));
+	}
+
+	void Cache::UpdateAccessTime() {
+		last_access_time = std::chrono::high_resolution_clock::now();
+	}
+
+	const std::chrono::high_resolution_clock::time_point Cache::LastAccessTime() const {
+		return last_access_time;
 	}
 }

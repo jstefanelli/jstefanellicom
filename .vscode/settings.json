@@ -76,6 +76,16 @@
         "*.tcc": "cpp",
         "memory_resource": "cpp",
         "stop_token": "cpp",
-        "filesystem": "cpp"
+        "filesystem": "cpp",
+        "codecvt": "cpp",
+        "fstream": "cpp",
+        "iomanip": "cpp",
+        "stack": "cpp",
+        "variant": "cpp",
+        "__tree": "cpp",
+        "list": "cpp",
+        "set": "cpp",
+        "unordered_set": "cpp",
+        "hash_set": "cpp"
     }
 }

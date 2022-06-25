@@ -36,6 +36,7 @@ namespace jwx {
 		static void StartClient(std::shared_ptr<SocketClient> client);
 		void appendUser(std::shared_ptr<SocketClientUser> user);
 		bool write(const std::vector<uint8_t> &data) const;
+		bool writeStream(std::istream &stream) const;
 		void stopThread();
 		void joinThread() const;
 	};

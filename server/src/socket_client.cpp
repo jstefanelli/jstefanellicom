@@ -139,6 +139,32 @@ namespace jwx {
 		return true;
 	}
 
+	bool SocketClient::writeStream(std::istream &stream) const {
+		pthread_t current_thread = pthread_self();
+		if (!pthread_equal(current_thread, thread)) {
+			std::cerr << "[SocketClient] Called writeStream() from invalid thread" << std::endl;
+			return false;
+		}
+
+		std::vector<uint8_t> data(1024, 0);
+		size_t total = 0;
+		size_t read = 0;
+		try {
+			do {
+				stream.read(reinterpret_cast<char*>(&data[0]), data.size());
+				read = stream.gcount();
+				total += read;
+				if (read > 0)
+					send(socket, &data[0], read, 0);
+			} while(!stream.eof());
+		} catch(std::exception ex) {
+			std::cerr << "[SocketClient] Error on writeStream(): " << ex.what() << std::endl;
+			return false;
+		}
+
+		return true;
+	}
+
 	void SocketClient::stopThread() {
 		alive = false;
 		pthread_kill(thread, SIGINT);

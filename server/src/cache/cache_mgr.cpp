@@ -2,6 +2,9 @@
 #include <exception>
 #include <iostream>
 
+#define JWX_CACHE_MGR_MAX_SIZE 2LL * 1024LL * 1024LL * 1024LL
+//#define JWX_CACHE_MGR_MAX_SIZE 0
+
 namespace jwx::cache {
 	CacheMgr::CacheMgr() : CacheMgr(std::filesystem::absolute(std::filesystem::path("."))) {
 
@@ -11,11 +14,32 @@ namespace jwx::cache {
 		
 	}
 
+	void CacheMgr::RemoveCache(const std::shared_ptr<Cache>& entry) {
+		if (entry == nullptr)
+			return;
+		
+		files.erase(entry->Path());
+		auto any = time_entries.erase(entry);
+		if (any > 0 && entry->Data() != nullptr) {
+			current_overall_size -= entry->Size();
+		}
+	}
+
+	void CacheMgr::SubmitCache(const std::shared_ptr<Cache>& entry) {
+		if (entry == nullptr)
+			return;
+
+		entry->UpdateAccessTime();
+		files[entry->Path()] = entry;
+		if (entry->Data() != nullptr) {
+			time_entries.insert(entry);
+			current_overall_size += entry->Size();
+		}
+	}
+
 	const std::shared_ptr<Cache> CacheMgr::Request(std::string request) {
-		lock.lock();
 		auto noncanonical_path = std::filesystem::path(root_content_dir).concat(request);
 		if (!std::filesystem::exists(noncanonical_path)) {
-			lock.unlock();
 			std::cerr << "[CacheMgr] Path '" << noncanonical_path << "' does not exits." << std::endl;
 			return nullptr;
 		}
@@ -23,6 +47,7 @@ namespace jwx::cache {
 		auto tmp = path;
 		bool found = false;
 
+		lock.lock();
 		do {
 			if (tmp == root_content_dir) {
 				found = true;
@@ -41,20 +66,39 @@ namespace jwx::cache {
 		try {
 			if (files.count(path) > 0) {
 				p = files[path];
-				if (p != nullptr && p->UpToDate()) {
-					lock.unlock();
-					return p;
+				if (p != nullptr) {
+					RemoveCache(p);
+					if (p->UpToDate()) {
+						SubmitCache(p);
+
+						lock.unlock();
+						return p;
+					}
 				}
 			}
 			p = Cache::Generate(path);
 			if (p != nullptr) {
-				files[path] = p;
+				SubmitCache(p);
 			}
 		} catch(std::runtime_error e) {
 			std::cerr << "[CacheMgr] Error '" << e.what() << "'" << std::endl;
-		} 
+		}
 		lock.unlock();
 
 		return p;
+	}
+
+	void CacheMgr::Cleanup() {
+		if (current_overall_size <= JWX_CACHE_MGR_MAX_SIZE)
+			return;
+
+		lock.lock();
+		size_t cleaned = 0;
+		size_t cleaned_size = 0;
+		while (current_overall_size > JWX_CACHE_MGR_MAX_SIZE && time_entries.size() > 0) {
+			auto it = *time_entries.begin();
+			RemoveCache(it.target);
+		}
+		lock.unlock();
 	}
 }

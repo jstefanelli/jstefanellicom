@@ -40,6 +40,8 @@ namespace jwx {
 		}
 
 		bool requestOk = false;
+		bool streamResponse = false;
+		std::shared_ptr<cache::Cache> file;
 		if (req.Method() == http::HTTPMethod::GET) {
 			std::filesystem::path path(req.Url().Uri());
 
@@ -47,13 +49,17 @@ namespace jwx {
 				path.concat("index.html");
 			}
 
-			auto file = cache->Request(path);
+			file = cache->Request(path);
 
 			if (file) {
 				requestOk = true;
 				response.StatusCode(200);
 				response.StatusText("Ok");
-				response.Content(file->Data());
+				if (file->Data() != nullptr) {
+					response.Content(*(file->Data()));
+				} else {
+					streamResponse = true;
+				}
 
 				if (path.has_extension()) {
 					std::string ext = path.extension();
@@ -92,9 +98,22 @@ namespace jwx {
 			response.ContentType("text/plain");
 		}
 
-		auto length = response.ContentLength();
-		std::cout << "[" << response.Version() << "][" << response.StatusCode() << "] " << response.StatusText() << " " << (length.has_value() ? length.value() : 0)  << std::endl;
+		if (streamResponse && requestOk) {
+			std::ifstream stream(file->Path());
 
-		client.write(response);
+			stream.seekg(0, std::ios::end);
+			size_t file_size = stream.tellg();
+			stream.seekg(0, std::ios::beg);
+
+			response.ContentLength(file_size);
+
+			client.write(response);
+			client.writeStream(stream);
+		} else {
+			auto length = response.ContentLength();
+			std::cout << "[" << response.Version() << "][" << response.StatusCode() << "] " << response.StatusText() << " " << (length.has_value() ? length.value() : 0)  << std::endl;
+
+			client.write(response);
+		}
 	}
 }

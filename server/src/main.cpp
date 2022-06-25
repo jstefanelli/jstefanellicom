@@ -21,6 +21,8 @@ bool alive = true;
 std::vector<std::weak_ptr<jwx::SocketClient>> clients;
 std::shared_ptr<jwx::cache::CacheMgr> cache;
 
+std::binary_semaphore cleanup_semaphore(0);
+
 int main(int argc, char** argv) {
 	std::string target_content_path = "./content";
 	int target_port = 4955;
@@ -135,7 +137,15 @@ int main(int argc, char** argv) {
 	});
 
 	cache = std::make_shared<jwx::cache::CacheMgr>(content_path);
-	
+
+	std::thread cleanup_thread([]() -> void {
+		while(alive) {
+			cache->Cleanup();
+
+			cleanup_semaphore.try_acquire_for(std::chrono::seconds(60));
+		}
+	});
+
 	while (alive) {
 		sockaddr_in client_address{};
 		socklen_t address_size = sizeof(client_address);
@@ -175,6 +185,10 @@ int main(int argc, char** argv) {
 			locked->joinThread();
 		}
 	}
+
+
+	cleanup_semaphore.release();
+	cleanup_thread.join();
 
 	return 0;
 }
