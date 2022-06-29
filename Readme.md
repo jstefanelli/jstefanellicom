@@ -22,4 +22,8 @@ Individual build instructions are provided in the respective `Readme.md` files i
 
 The server is supposed to sit behind a proxy of some kind which handles HTTPS.
 
-A Dockerfile will be provided in the future
+A Dockerfile is provided in the root directory. It will build both the server and frontend, and package it in a <10MB image.
+
+### Docker image parameters:
+
+ - **JWX_PORT**: Port for the server, default is *4955*
